@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d10">
+<meta name="description" content="RingSense — camera-based boxing training feedback prototype">
+<link rel="manifest" href="manifest.webmanifest">
+<title>RingSense Boxing Coach</title>
+<style>
+:root{--bg:#0b0d10;--panel:#151920;--line:#2a303a;--text:#f2f4f7;--muted:#9ba5b3;--lime:#c8ff48;--amber:#ffc15b;--red:#ff7272;--blue:#75caff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 90% -10%,#26323d 0,transparent 40%),var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding-bottom:env(safe-area-inset-bottom)}
+main{max-width:1000px;margin:auto;padding:16px 13px 34px}.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 22px}.brand{font-weight:900;letter-spacing:-.6px;font-size:19px}.brand em{font-style:normal;color:var(--lime)}.tag{border:1px solid #39414d;border-radius:99px;color:var(--muted);padding:6px 9px;font-size:11px}
+h1{font-size:clamp(29px,7vw,44px);letter-spacing:-1.6px;line-height:1.02;margin:0 0 10px}.lime{color:var(--lime)}.intro{color:var(--muted);margin:0 0 17px;font-size:14px}
+.layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:13px}.panel{min-width:0;background:rgba(21,25,32,.97);border:1px solid var(--line);border-radius:17px;padding:13px}.head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:11px}.head h2{font-size:14px;margin:0;letter-spacing:.25px}.muted{color:var(--muted);font-size:11px}
+.stage{position:relative;aspect-ratio:3/4;max-height:570px;min-height:270px;background:#06080b;border-radius:12px;overflow:hidden;display:grid;place-items:center}.stage video,.stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}.stage video{display:none}.stage canvas{z-index:2}.placeholder{text-align:center;padding:24px;color:var(--muted);max-width:300px;font-size:13px}.placeholder b{display:block;color:#f1f3f5;font-size:16px;margin-bottom:8px}
+.controls{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.btn{background:#242b35;border:1px solid #3a4350;border-radius:10px;color:var(--text);padding:10px 12px;font-weight:750;font-size:13px;cursor:pointer}.btn.primary{background:var(--lime);border-color:var(--lime);color:#14180c}.btn:disabled{opacity:.4}.select{width:100%;background:#202630;border:1px solid #3a4350;border-radius:10px;color:var(--text);padding:10px;margin-top:9px}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:10px}.metric{background:#0e1116;border:1px solid var(--line);border-radius:11px;padding:10px}.num{font-size:23px;font-weight:900;letter-spacing:-.6px}.label{font-size:10px;color:var(--muted)}
+.status{font-size:11px;color:var(--muted);margin-top:10px;min-height:16px}.status.good{color:var(--lime)}.status.err{color:#ff9292}
+.score{display:flex;align-items:center;gap:12px;background:#0e1217;border:1px solid var(--line);border-radius:12px;padding:11px;margin-bottom:10px}.ring{width:60px;height:60px;flex:0 0 auto;border:4px solid var(--lime);border-radius:50%;display:grid;place-items:center;font-size:19px;font-weight:900}.score b{display:block;font-size:13px}.score small{color:var(--muted);font-size:11px}
+.item{border:1px solid var(--line);background:#10141a;border-radius:11px;padding:11px;margin:8px 0}.item h3{font-size:12px;margin:0 0 5px}.item p{font-size:12px;color:#b9c2ce;margin:0}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--lime);margin-right:6px}.item.warn .dot{background:var(--amber)}.item.bad .dot{background:var(--red)}
+.cue{border-left:3px solid var(--lime);background:#171d15;color:#dce8d1;border-radius:0 10px 10px 0;padding:10px 11px;font-size:12px;margin-top:10px}
+.details{margin-top:13px}.details summary{cursor:pointer;font-weight:750;font-size:13px}.details p,.details li{color:var(--muted);font-size:12px}.notice{font-size:11px;color:var(--muted);margin-top:13px}.bottom{font-size:11px;color:var(--muted);margin-top:14px}
+@media(max-width:720px){main{padding:12px 10px 28px}.layout{grid-template-columns:1fr}.stage{aspect-ratio:3/4;max-height:62vh}.panel{padding:11px}.top{margin-bottom:18px}.metrics .num{font-size:21px}}
+</style>
+</head>
+<body><main>
+<div class="top"><div class="brand">RING<em>SENSE</em> / COACH</div><div class="tag">ANDROID EDITION · BETA</div></div>
+<h1>Train with feedback.<br><span class="lime">Build better habits.</span></h1>
+<p class="intro">Phone-camera movement coach. Set your phone securely at a safe distance, keep your whole body in frame, and begin slowly.</p>
+<div class="layout">
+<section class="panel">
+ <div class="head"><h2>LIVE MOVEMENT</h2><span class="muted" id="visionLabel">Camera off</span></div>
+ <div class="stage" id="stage"><video id="video" playsinline muted></video><canvas id="overlay"></canvas><div class="placeholder" id="placeholder"><b>Ready when you are.</b>Prop your phone securely in portrait orientation. Show your head, hands, hips, knees and feet. Use good light and a clear space.</div></div>
+ <select class="select" id="stance"><option value="orthodox">Orthodox — left side forward</option><option value="southpaw">Southpaw — right side forward</option></select>
+ <div class="controls"><button class="btn primary" id="startBtn">Start camera</button><button class="btn" id="stopBtn" disabled>Stop</button><button class="btn" id="resetBtn">Reset round</button></div>
+ <div class="metrics"><div class="metric"><div class="num" id="punches">0</div><div class="label">Motion events*</div></div><div class="metric"><div class="num" id="elapsed">00:00</div><div class="label">Round time</div></div><div class="metric"><div class="num" id="visibility">—</div><div class="label">Pose visibility</div></div></div>
+ <div class="status" id="status">Allow camera access to begin. Internet is needed to load the pose model.</div>
+</section>
+<aside class="panel">
+ <div class="head"><h2>COACH'S CORNER</h2><span class="tag">Live estimates</span></div>
+ <div class="score"><div class="ring" id="score">—</div><div><b id="headline">Waiting for body landmarks</b><small id="scoreDesc">Your feedback will appear here when visible joints are tracked.</small></div></div>
+ <div class="item" id="punchItem"><h3><span class="dot"></span>Punch pattern</h3><p id="punchFeedback">Move slowly. The prototype estimates arm-motion events; it cannot confirm a clean jab, cross or hook every time.</p></div>
+ <div class="item" id="guardItem"><h3><span class="dot"></span>Guard & return</h3><p id="guardFeedback">Between punches, bring both hands back toward cheek level without tensing your shoulders.</p></div>
+ <div class="item" id="stanceItem"><h3><span class="dot"></span>Stance & posture</h3><p id="stanceFeedback">Keep a comfortable staggered stance, knees soft, chin gently tucked and shoulders relaxed.</p></div>
+ <div class="item" id="balanceItem"><h3><span class="dot"></span>Balance</h3><p id="balanceFeedback">Rotate under control; avoid falling or reaching far beyond your base.</p></div>
+ <div class="item" id="footItem"><h3><span class="dot"></span>Footwork</h3><p id="footFeedback">Keep feet separated. Move in small steps and avoid crossing your feet. Full-foot visibility is required.</p></div>
+ <div class="cue" id="cue">Coach cue: smooth and balanced first. Speed comes after control.</div>
+ <details class="details"><summary>How accurate is this?</summary><p>This is a prototype using browser pose landmarks and simple motion heuristics. Punch labels are tentative, and front-camera mirroring can complicate left/right interpretation. A single 2D camera cannot reliably measure force, impact, injury risk, exact rotation, or replace an experienced coach.</p></details>
+</aside>
+</div>
+<div class="notice">Safety: shadowbox only in a clear area. Do not hit walls, furniture, or people. Stop if you feel pain, dizziness, or unusual discomfort. This app does not diagnose injuries or certify technique.</div>
+<div class="bottom">Privacy: this page processes camera frames locally in your browser; it does not send video to a RingSense server. The pose-model files load from a public CDN. Use only a trusted hosting provider.</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
+<script>
+const $=id=>document.getElementById(id), video=$('video'), canvas=$('overlay'), ctx=canvas.getContext('2d');
+let stream=null,pose=null,running=false,frameBusy=false,timer=null,startAt=0,events=0,lastWrist=null,lastEvent=0,history=[],lastFeedback=0;
+const P={LS:11,RS:12,LE:13,RE:14,LW:15,RW:16,LH:23,RH:24,LK:25,RK:26,LA:27,RA:28,LHIND:29,RHIND:30,LHEEL:31,RHEEL:32};
+const conf=i=>latest&&latest[i]&&latest[i].visibility>.45;
+let latest=null;
+function setStatus(t,k=''){ $('status').textContent=t;$('status').className='status '+k}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0')}
+function resize(){let r=canvas.getBoundingClientRect(),d=window.devicePixelRatio||1;canvas.width=Math.max(1,Math.round(r.width*d));canvas.height=Math.max(1,Math.round(r.height*d));ctx.setTransform(d,0,0,d,0,0)}
+window.addEventListener('resize',resize);setTimeout(resize,100);
+function line(a,b,color='#c8ff48',w=3){if(!a||!b)return;ctx.strokeStyle=color;ctx.lineWidth=w;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(a.x*canvas.clientWidth,a.y*canvas.clientHeight);ctx.lineTo(b.x*canvas.clientWidth,b.y*canvas.clientHeight);ctx.stroke()}
+function point(p,color='#f4f6f8'){if(!p)return;ctx.fillStyle=color;ctx.beginPath();ctx.arc(p.x*canvas.clientWidth,p.y*canvas.clientHeight,3.5,0,Math.PI*2);ctx.fill()}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function setItem(id,kind,text){const e=$(id);e.className='item '+(kind||'');e.querySelector('p').textContent=text}
+function reset(){events=0;lastWrist=null;lastEvent=0;history=[];$('punches').textContent='0';$('elapsed').textContent='00:00';$('score').textContent='—';$('headline').textContent='Waiting for body landmarks';$('scoreDesc').textContent='Your feedback will appear here when visible joints are tracked.';setStatus('Round reset.');}
+$('resetBtn').onclick=reset;
+function analyze(L){
+ const required=[11,12,13,14,15,16,23,24,25,26,27,28],visible=required.filter(i=>L[i].visibility>.5).length;
+ $('visibility').textContent=visible>=11?'Good':visible>=8?'Fair':'Low';
+ if(visible<8){$('score').textContent='—';$('headline').textContent='Show more of your body';$('scoreDesc').textContent='Step back and improve lighting so shoulders, wrists, hips and legs stay visible.';setStatus('Low visibility — keep the full body in frame.','err');return}
+ const ls=L[11],rs=L[12],lw=L[15],rw=L[16],lh=L[23],rh=L[24],lk=L[25],rk=L[26],la=L[27],ra=L[28];
+ const shoulderW=Math.max(.06,dist(ls,rs)),hipW=Math.max(.05,dist(lh,rh));
+ const shoulderMid={x:(ls.x+rs.x)/2,y:(ls.y+rs.y)/2},hipMid={x:(lh.x+rh.x)/2,y:(lh.y+rh.y)/2};
+ const torsoLean=Math.abs(shoulderMid.x-hipMid.x)/Math.max(.08,Math.abs(shoulderMid.y-hipMid.y));
+ const handsNearFace=(lw.y<ls.y+.13 && rw.y<rs.y+.13 && Math.abs(lw.x-ls.x)<shoulderW*1.35 && Math.abs(rw.x-rs.x)<shoulderW*1.35);
+ const feetVisible=L[27].visibility>.45&&L[28].visibility>.45;
+ const footGap=feetVisible?Math.abs(la.x-ra.x):0;
+ const kneeGap=Math.abs(lk.x-rk.x);
+ const stance=$('stance').value;
+ let motion='No clear punch-like movement yet. Try a slow straight punch, then return your hand to guard.';
+ const now=performance.now(), cur={l:{x:lw.x,y:lw.y},r:{x:rw.x,y:rw.y}};
+ if(lastWrist){
+  const dl=dist(cur.l,lastWrist.l)/shoulderW,dr=dist(cur.r,lastWrist.r)/shoulderW;
+  const maxMove=Math.max(dl,dr),sideMove=Math.max(Math.abs(cur.l.x-lastWrist.l.x),Math.abs(cur.r.x-lastWrist.r.x))/shoulderW;
+  if(maxMove>.36&&now-lastEvent>550){
+   events++;$('punches').textContent=events;lastEvent=now;
+   const dominant=dl>dr?'left arm':'right arm';
+   let type='punch-like movement';
+   const active=dl>dr?cur.l:cur.r,prev=dl>dr?lastWrist.l:lastWrist.r;
+   const dx=active.x-prev.x,dy=active.y-prev.y;
+   if(Math.abs(dx)>Math.abs(dy)*1.25)type='possible hook / lateral punch';
+   else if(Math.abs(dx)<Math.abs(dy)*.8)type='possible straight punch';
+   motion='Detected '+type+' ('+dominant+'). Label is tentative; turn and hand position can confuse the estimate. Return to guard under control.';
+  }
+ }
+ lastWrist=cur;
+ let score=80, cues=[];
+ if(!handsNearFace){score-=12;cues.push('Bring both hands back toward cheek level between punches.')}
+ else cues.push('Hands appear near guard position in this frame.');
+ if(torsoLean>.38){score-=12;cues.push('Reduce sideways lean; rotate through your base rather than reaching.')}
+ else cues.push('Torso alignment looks fairly steady in this frame.');
+ if(feetVisible){
+  if(footGap<.07){score-=8;cues.push('Feet look close together from this view; widen to a comfortable staggered base.')}
+  else cues.push('Keep the staggered base comfortable and avoid crossing feet.');
+ }else cues.push('Feet are not fully visible; footwork feedback is limited.');
+ if(visible<10)score-=8;
+ score=Math.max(40,Math.min(95,score));
+ $('score').textContent=score;$('headline').textContent=score>=85?'Solid basics showing':score>=70?'Keep refining control':'Slow down and reset';
+ $('scoreDesc').textContent='Rough visual consistency estimate, not a validated technique score.';
+ setItem('punchItem','',motion);
+ setItem('guardItem',handsNearFace?'':'warn',handsNearFace?'Hands appear near the upper body in this frame. Confirm your guard stays up between punches.':'Hands look low or far from the face. Bring them back toward cheek level after each punch.');
+ setItem('stanceItem',torsoLean>.38?'warn':'','Stance selected: '+(stance==='orthodox'?'orthodox (left lead)':'southpaw (right lead)')+'. Camera cannot confidently verify lead foot from this view; keep knees soft and stance staggered.');
+ setItem('balanceItem',torsoLean>.38?'warn':'',torsoLean>.38?'Shoulders are shifting sideways relative to hips. Reduce reach and slow the movement.':'Torso and hip alignment look reasonably steady in this frame; this is a rough cue only.');
+ setItem('footItem',!feetVisible?'warn':footGap<.07?'warn':'',!feetVisible?'Feet are partly out of frame. Reposition the phone to include both feet.':footGap<.07?'Feet look close together in this frame. Use a comfortable staggered base and avoid crossing them.':'Feet appear separated in this frame. During movement, step rather than crossing your feet.');
+ $('cue').textContent='Coach cue: '+(cues.find(x=>x.includes('Bring'))||cues.find(x=>x.includes('lean'))||'Stay balanced, exhale naturally, and bring the hands home after each punch.');
+ setStatus('Pose tracking active. All scores are approximate.','good');
+}
+function onResults(res){
+ if(!running)return;resize();ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
+ if(!res.poseLandmarks){latest=null;$('visibility').textContent='Low';setStatus('Body not detected — step back and improve lighting.','err');return}
+ const L=res.poseLandmarks;latest=L;
+ const pairs=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,31],[28,32]];
+ pairs.forEach(([a,b])=>{if(L[a].visibility>.35&&L[b].visibility>.35)line(L[a],L[b])});
+ [11,12,13,14,15,16,23,24,25,26,27,28,31,32].forEach(i=>{if(L[i].visibility>.35)point(L[i],i===15||i===16?'#75caff':'#f4f6f8')});
+ analyze(L);
+}
+async function start(){
+ if(running)return;
+ try{
+  if(!window.isSecureContext)throw new Error('Camera needs HTTPS. Deploy this folder to a secure site (see README), then open that link in Chrome.');
+  if(!navigator.mediaDevices?.getUserMedia)throw new Error('Camera API unavailable. Open in current Chrome on Android over HTTPS.');
+  if(!window.Pose)throw new Error('Pose model library did not load. Check your internet connection and reload.');
+  setStatus('Requesting camera permission…');
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:720},height:{ideal:1280}},audio:false});
+  video.srcObject=stream;await video.play();running=true;$('placeholder').classList.add('hidden');video.style.display='block';$('startBtn').disabled=true;$('stopBtn').disabled=false;$('visionLabel').textContent='Loading model…';
+  pose=new Pose({locateFile:file=>'https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/'+file});
+  pose.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:.55,minTrackingConfidence:.55});
+  pose.onResults(onResults);await pose.initialize();$('visionLabel').textContent='Tracking';startAt=performance.now();timer=setInterval(()=>$('elapsed').textContent=fmt((performance.now()-startAt)/1000),250);
+  async function frame(){if(!running)return;if(!frameBusy&&video.readyState>=2){frameBusy=true;try{await pose.send({image:video})}catch(e){console.error(e)}finally{frameBusy=false}}if(running)requestAnimationFrame(frame)}
+  frame();setStatus('Camera active. Keep your full body visible.','good');
+ }catch(e){setStatus(e.message||'Could not start camera. Allow permission and try again.','err');stop()}
+}
+function stop(){
+ running=false;if(timer)clearInterval(timer);timer=null;if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;video.pause();video.srcObject=null;video.style.display='none';ctx.clearRect(0,0,canvas.width,canvas.height);$('placeholder').classList.remove('hidden');$('startBtn').disabled=false;$('stopBtn').disabled=true;$('visionLabel').textContent='Camera off';if(pose){try{pose.close()}catch(e){}pose=null}lastWrist=null;latest=null;setStatus('Camera stopped.');
+}
+$('startBtn').onclick=start;$('stopBtn').onclick=stop;
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script>
+</body></html>

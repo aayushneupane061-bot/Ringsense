@@ -1,0 +1,12 @@
+{
+  "name": "RingSense AI Boxing Coach",
+  "short_name": "RingSense",
+  "description": "Camera-based boxing movement feedback prototype",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0d10",
+  "theme_color": "#0b0d10",
+  "icons": []
+}
